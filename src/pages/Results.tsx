@@ -3,15 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, CheckCircle2, TrendingUp, Target, Award } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AssessmentResult } from "@/types/assessment";
 import { toast } from "sonner";
-import { QuadrantChart } from "@/components/results/QuadrantChart";
 import yiLogo from "@/assets/yi-logo.png";
+import { ResultsHero } from "@/components/results/ResultsHero";
+import { RoleRecommendations } from "@/components/results/RoleRecommendations";
+import { UniqueInsights } from "@/components/results/UniqueInsights";
+import { GrowthPath } from "@/components/results/GrowthPath";
+import { NextSteps } from "@/components/results/NextSteps";
+import { ShareResults } from "@/components/results/ShareResults";
+import { ConfettiEffect } from "@/components/results/ConfettiEffect";
 
 const Results = () => {
   const navigate = useNavigate();
@@ -52,15 +56,7 @@ const Results = () => {
     fetchResults();
   }, [assessment, navigate]);
 
-  const handleShare = () => {
-    const text = `I just completed the Yi Erode EC 2026 Assessment! My recommended role: ${result?.recommended_role} (${result?.quadrant})`;
-    if (navigator.share) {
-      navigator.share({ text, url: window.location.href });
-    } else {
-      navigator.clipboard.writeText(text);
-      toast.success("Results copied to clipboard!");
-    }
-  };
+  const isStarQuadrant = result?.quadrant.includes('STAR') || false;
 
   if (isLoading) {
     return (
@@ -86,251 +82,131 @@ const Results = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 py-8 px-4">
+      <ConfettiEffect trigger={isStarQuadrant} />
+      
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex items-center justify-between mb-8"
         >
-          <Button variant="ghost" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="lg" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          <img src={yiLogo} alt="Yi Logo" className="h-12 animate-float" />
         </motion.div>
 
-        {/* Main Result Card */}
+        {/* Hero Title */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-yi-orange via-accent to-primary bg-clip-text text-transparent">
+            Your Yi Erode EC 2026 Profile
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            AI-powered analysis of your potential and perfect role match
+          </p>
+        </motion.div>
+
+        {/* Section 1: Hero Results */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-8 bg-gradient-card border-yi-orange/30">
-            <div className="flex items-start gap-6">
-              <img src={yiLogo} alt="Yi Logo" className="w-16 h-16 animate-float" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-yi-orange">Your Best Fit Role</Badge>
-                  <Badge variant="outline">{result.quadrant}</Badge>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-3">
-                  {result.recommended_role}
-                </h1>
-                <p className="text-muted-foreground text-lg mb-4">
-                  {result.role_explanation}
-                </p>
-              </div>
-            </div>
-          </Card>
+          <ResultsHero
+            willScore={result.will_score}
+            skillScore={result.skill_score}
+            quadrant={result.quadrant}
+            commitmentLevel={result.key_insights.commitment_level}
+            skillReadiness={result.key_insights.skill_readiness}
+          />
         </motion.div>
 
-        {/* Quadrant Visualization */}
+        {/* Section 2: Role Recommendations */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-8">
-            <h3 className="font-semibold text-lg mb-6 text-center">Will-Skill Quadrant Analysis</h3>
-            <QuadrantChart 
-              willScore={result.will_score} 
-              skillScore={result.skill_score} 
-              quadrant={result.quadrant} 
-            />
-          </Card>
+          <RoleRecommendations recommendations={result.recommendations || []} />
         </motion.div>
 
-        {/* Scores Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-yi-orange/20 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-yi-orange" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">WILL Score</h3>
-                  <p className="text-xs text-muted-foreground">Commitment & Drive</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold">{result.will_score}%</span>
-                  <span className="text-sm text-muted-foreground">
-                    {result.key_insights.commitment_level.toUpperCase()}
-                  </span>
-                </div>
-                <Progress value={result.will_score} className="h-3" />
-              </div>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">SKILL Score</h3>
-                  <p className="text-xs text-muted-foreground">Expertise & Readiness</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold">{result.skill_score}%</span>
-                  <span className="text-sm text-muted-foreground">
-                    {result.key_insights.skill_readiness.toUpperCase()}
-                  </span>
-                </div>
-                <Progress value={result.skill_score} className="h-3" />
-              </div>
-            </Card>
-          </motion.div>
-        </div>
+        {/* Section 3: What Makes You Unique */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <UniqueInsights
+            strengths={result.key_insights.strengths}
+            developmentAreas={result.key_insights.development_areas}
+          />
+        </motion.div>
 
         {/* AI Reasoning */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
         >
-          <Card className="p-6 bg-accent/5 border-accent/20">
-            <h3 className="font-semibold text-lg mb-3">AI Analysis</h3>
+          <Card className="p-8 bg-gradient-to-br from-primary/5 via-card to-yi-orange/5 border-2 border-primary/20">
+            <h3 className="font-bold text-xl mb-4">🤖 AI Deep Dive Analysis</h3>
             <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
               {result.reasoning}
             </p>
           </Card>
         </motion.div>
 
-        {/* Role Recommendations */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-yi-orange" />
-              Top 3 Role Recommendations
-            </h3>
-            <div className="space-y-4">
-              {result.recommendations?.map((rec, i) => (
-                <div key={i} className={`p-4 rounded-lg border-2 ${i === 0 ? 'border-yi-orange bg-yi-orange/5' : 'border-border'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-base">{rec.role}</h4>
-                    <Badge variant={i === 0 ? "default" : "outline"} className={i === 0 ? "bg-yi-orange" : ""}>
-                      {rec.confidence}% fit
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{rec.reason}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-4">Your Profile</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent" />
-                  <h4 className="font-semibold">Key Strengths</h4>
-                </div>
-                <ul className="space-y-2">
-                  {result.key_insights.strengths.map((strength, i) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-yi-orange mt-0.5">•</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-5 h-5 text-yi-orange" />
-                  <h4 className="font-semibold">Growth Areas</h4>
-                </div>
-                <ul className="space-y-2">
-                  {result.key_insights.development_areas.map((area, i) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-accent mt-0.5">•</span>
-                      <span>{area}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Vertical Matches */}
+        {/* Section 4: Growth Path */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-4">Best Fit Verticals</h3>
-            <div className="flex flex-wrap gap-2">
-              {result.vertical_matches.map((vertical, i) => (
-                <Badge key={i} variant="outline" className="text-base py-2 px-4">
-                  {vertical}
-                </Badge>
-              ))}
-            </div>
-          </Card>
+          <GrowthPath
+            quadrant={result.quadrant}
+            willScore={result.will_score}
+            skillScore={result.skill_score}
+            growthPotential={result.key_insights.growth_potential}
+          />
         </motion.div>
 
-        {/* Leadership Style */}
+        {/* Section 5: Next Steps */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="p-6 bg-accent/10 border-accent/30">
-            <h3 className="font-semibold text-lg mb-2">Your Leadership Style</h3>
-            <p className="text-muted-foreground">
-              <span className="font-semibold text-accent">{result.leadership_style}</span> - 
-              You naturally approach challenges with this mindset, making you well-suited for the {result.recommended_role} position.
-            </p>
-          </Card>
+          <NextSteps />
         </motion.div>
 
-        {/* CTA */}
+        {/* Section 6: Share Results */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="text-center pt-4"
         >
-          <Button size="lg" className="bg-yi-orange hover:bg-yi-orange/90">
-            Apply for EC 2026
-          </Button>
-          <p className="text-xs text-muted-foreground mt-4">
-            Results based on AI analysis of your responses
+          <ShareResults
+            quadrant={result.quadrant}
+            recommendedRole={result.recommended_role}
+          />
+        </motion.div>
+
+        {/* Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="text-center py-8 border-t border-border"
+        >
+          <p className="text-sm text-muted-foreground">
+            Results generated by AI based on your assessment responses • Yi Erode EC 2026
           </p>
         </motion.div>
       </div>
