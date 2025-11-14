@@ -168,7 +168,28 @@ Economic Development,Fostering economic growth and opportunity`;
     toast.success("Template downloaded successfully");
   };
 
-  const handleBulkUpload = async () => {
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const handleBulkUpload = async (replaceAll: boolean = false) => {
     if (!csvFile) {
       toast.error("Please select a CSV file");
       return;
@@ -180,14 +201,13 @@ Economic Development,Fostering economic growth and opportunity`;
       
       // Skip header row if it exists
       const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
-      const maxOrder = Math.max(...verticals.map(v => v.display_order), 0);
       
       const verticalsToInsert = lines.slice(startIndex).map((line, index) => {
-        const [name, description] = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+        const [name, description] = parseCSVLine(line);
         return {
-          name,
+          name: name || '',
           description: description || '',
-          display_order: maxOrder + index + 1,
+          display_order: index + 1,
           is_active: true,
         };
       }).filter(v => v.name);
@@ -197,11 +217,21 @@ Economic Development,Fostering economic growth and opportunity`;
         return;
       }
 
+      // If replace all, delete existing verticals first
+      if (replaceAll) {
+        const { error: deleteError } = await supabase
+          .from("verticals")
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        
+        if (deleteError) throw deleteError;
+      }
+
       const { error } = await supabase.from("verticals").insert(verticalsToInsert);
 
       if (error) throw error;
       
-      toast.success(`Successfully uploaded ${verticalsToInsert.length} verticals`);
+      toast.success(`Successfully ${replaceAll ? 'replaced' : 'uploaded'} ${verticalsToInsert.length} verticals`);
       setIsBulkUploadOpen(false);
       setCsvFile(null);
       fetchVerticals();
@@ -266,8 +296,18 @@ Economic Development,Fostering economic growth and opportunity`;
                   <Button variant="outline" onClick={() => setIsBulkUploadOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleBulkUpload} disabled={!csvFile}>
-                    Upload
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleBulkUpload(false)} 
+                    disabled={!csvFile}
+                  >
+                    Add to Existing
+                  </Button>
+                  <Button 
+                    onClick={() => handleBulkUpload(true)} 
+                    disabled={!csvFile}
+                  >
+                    Replace All
                   </Button>
                 </div>
               </div>
