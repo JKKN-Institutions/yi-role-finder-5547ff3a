@@ -44,7 +44,6 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const { data, error } = await supabase
         .from('assessments')
         .insert({ 
-          user_id: session?.user?.id || null,  // Optional: null for anonymous users
           session_id: sessionId,
           user_email: email.trim(), 
           user_name: fullName.trim() 
