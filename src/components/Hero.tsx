@@ -2,9 +2,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import yiLogo from "@/assets/yi-logo.png";
 
 export const Hero = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero animate-gradient-shift bg-[length:200%_200%]">
       {/* Animated background overlay */}
@@ -70,13 +72,14 @@ export const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <Button 
-              size="lg" 
-              className="bg-yi-orange hover:bg-yi-orange/90 text-primary-foreground px-8 py-6 text-lg font-semibold shadow-glow hover:shadow-xl transition-all duration-300 group animate-pulse-glow"
-            >
-              Start Smart Assessment
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
+          <Button 
+            size="lg"
+            onClick={() => navigate("/assessment")}
+            className="bg-yi-orange hover:bg-yi-orange/90 text-primary-foreground px-8 py-6 text-lg font-semibold shadow-glow hover:shadow-xl transition-all duration-300 group animate-pulse-glow"
+          >
+            Start Smart Assessment
+            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Button>
           </motion.div>
 
           {/* Stats Ticker */}
