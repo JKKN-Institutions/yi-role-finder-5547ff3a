@@ -96,9 +96,7 @@ const Assessment = () => {
             </Button>
           </form>
 
-          <p className="text-xs text-center text-muted-foreground mt-6">
-            Based on 4 years of Yi Erode data • 95% accuracy
-          </p>
+          
         </div>
       </motion.div>
     </div>;
