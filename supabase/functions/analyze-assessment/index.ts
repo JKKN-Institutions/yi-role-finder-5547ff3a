@@ -34,7 +34,7 @@ interface Recommendation {
   reason: string;
 }
 
-function calculateWillScore(responses: any[]): WillScoreResult {
+async function calculateWillScore(responses: any[], lovableApiKey: string): Promise<WillScoreResult> {
   let total = 0;
   const breakdown = {
     q2_commitment: 0,
@@ -43,18 +43,24 @@ function calculateWillScore(responses: any[]): WillScoreResult {
     q5_leadership: 0
   };
 
-  // Question 2 - Saturday scenario analysis
+  // Question 2 - Saturday scenario analysis with AI
   const q2 = responses.find(r => r.question_number === 2);
   if (q2?.response_data?.text) {
-    const text = q2.response_data.text.toLowerCase();
-    if (text.match(/\b(yes|absolutely|count me in|i'm there|immediately)\b/)) {
-      breakdown.q2_commitment = 25;
-    } else if (text.match(/\b(if|depends|need to|let me|check)\b/)) {
-      breakdown.q2_commitment = 15;
-    } else if (text.match(/\b(what|who|when|where|how)\b.*\?/)) {
-      breakdown.q2_commitment = 10;
-    } else {
-      breakdown.q2_commitment = 5;
+    try {
+      const aiAnalysis = await analyzeCommitmentWithAI(q2.response_data.text, lovableApiKey);
+      breakdown.q2_commitment = aiAnalysis.score;
+      console.log(`Q2 AI Analysis: ${aiAnalysis.score}/25 - ${aiAnalysis.reasoning}`);
+    } catch (error) {
+      console.error('Q2 AI analysis failed, using fallback:', error);
+      // Fallback to keyword matching
+      const text = q2.response_data.text.toLowerCase();
+      if (text.match(/\b(yes|absolutely|count me in|i'm there|immediately)\b/)) {
+        breakdown.q2_commitment = 25;
+      } else if (text.match(/\b(if|depends|need to|let me|check)\b/)) {
+        breakdown.q2_commitment = 15;
+      } else {
+        breakdown.q2_commitment = 10;
+      }
     }
   }
 
@@ -107,6 +113,57 @@ function calculateWillScore(responses: any[]): WillScoreResult {
           breakdown.q4_constraints + breakdown.q5_leadership;
 
   return { total, breakdown };
+}
+
+async function analyzeCommitmentWithAI(q2Response: string, lovableApiKey: string): Promise<{ score: number; reasoning: string }> {
+  const prompt = `Analyze this Saturday urgent commitment response for genuine WILL/commitment level. Score 0-25 points.
+
+RESPONSE: "${q2Response}"
+
+SCORING RUBRIC (0-25):
+- 25 points: Immediate YES without conditions. Uses decisive language (absolutely, immediately, count me in)
+- 20 points: Yes with minor clarification questions (What time? Where?)
+- 15 points: Conditional yes ("If...", "Depends on...", "Let me check...")
+- 10 points: Asks multiple questions before committing (hedging)
+- 5 points: Non-committal or evasive response
+
+Return JSON: { "score": <number>, "reasoning": "<1 sentence>" }`;
+
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${lovableApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: 'You are an expert at assessing commitment levels from text. Be precise and concise.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) throw new Error(`AI API error: ${response.status}`);
+  
+  const data = await response.json();
+  const content = data.choices[0].message.content.trim();
+  
+  try {
+    const parsed = JSON.parse(content);
+    return { score: parsed.score, reasoning: parsed.reasoning };
+  } catch {
+    // Fallback to keyword-based if JSON parsing fails
+    const text = q2Response.toLowerCase();
+    if (text.match(/\b(yes|absolutely|count me in|i'm there|immediately)\b/)) {
+      return { score: 25, reasoning: 'Immediate affirmative response' };
+    } else if (text.match(/\b(if|depends|need to|let me|check)\b/)) {
+      return { score: 15, reasoning: 'Conditional commitment' };
+    } else {
+      return { score: 10, reasoning: 'Unclear or hedging response' };
+    }
+  }
 }
 
 async function analyzeSkillScore(responses: any[], lovableApiKey: string): Promise<SkillAnalysis> {
@@ -190,13 +247,28 @@ function determineQuadrant(willPercent: number, skillPercent: number): string {
   return 'Q3 - NOT READY';
 }
 
-function generateRecommendations(
+async function generateRecommendations(
   quadrant: string,
   verticals: string[],
-  leadershipStyle: string
-): Recommendation[] {
+  leadershipStyle: string,
+  supabase: any
+): Promise<Recommendation[]> {
   const recommendations: Recommendation[] = [];
-  const topVertical = verticals[0] || 'General';
+  
+  // Fetch vertical names from database
+  const verticalNames: string[] = [];
+  for (const verticalId of verticals) {
+    const { data } = await supabase
+      .from('verticals')
+      .select('name')
+      .eq('id', verticalId)
+      .single();
+    if (data) verticalNames.push(data.name);
+  }
+  
+  const topVertical = verticalNames[0] || 'General';
+  const secondVertical = verticalNames[1];
+  const thirdVertical = verticalNames[2];
 
   if (quadrant === 'Q1 - STAR') {
     if (leadershipStyle === 'strategic') {
@@ -208,8 +280,15 @@ function generateRecommendations(
       recommendations.push({
         role: `${topVertical} Vertical Chair`,
         confidence: 85,
-        reason: 'Strong passion for this vertical combined with leadership capabilities'
+        reason: `Perfect fit for your #1 vertical choice. Strategic thinking aligns with vertical goals`
       });
+      if (secondVertical) {
+        recommendations.push({
+          role: `${secondVertical} Vertical Co-Chair`,
+          confidence: 75,
+          reason: `Strong secondary interest. Can support while developing expertise`
+        });
+      }
       recommendations.push({
         role: 'Project Lead',
         confidence: 80,
@@ -378,35 +457,50 @@ serve(async (req) => {
 
   try {
     const { assessmentId } = await req.json();
-    console.log('Analyzing assessment:', assessmentId);
+    console.log('🔍 Analyzing assessment:', assessmentId);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    
+    if (!supabaseUrl || !supabaseKey || !lovableApiKey) {
+      throw new Error('Missing required environment variables');
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch responses
+    console.log('📥 Fetching assessment responses...');
     const { data: responses, error: responsesError } = await supabase
       .from('assessment_responses')
       .select('*')
       .eq('assessment_id', assessmentId)
       .order('question_number');
 
-    if (responsesError) throw responsesError;
+    if (responsesError) {
+      console.error('❌ Error fetching responses:', responsesError);
+      throw responsesError;
+    }
+    
     if (!responses || responses.length !== 5) {
+      console.error('❌ Incomplete assessment:', responses?.length || 0, 'responses found');
       throw new Error('Incomplete assessment - need all 5 responses');
     }
 
-    console.log('Calculating WILL score...');
-    const willResult = calculateWillScore(responses);
+    console.log('✅ Found all 5 responses');
+    console.log('🧮 Calculating WILL score with AI enhancement...');
+    const willResult = await calculateWillScore(responses, lovableApiKey);
     const willPercent = Math.round((willResult.total / 90) * 100);
+    console.log(`✅ WILL Score: ${willPercent}% (${willResult.total}/90)`);
 
-    console.log('Analyzing SKILL score with AI...');
+    console.log('🤖 Analyzing SKILL score with AI...');
     const skillAnalysis = await analyzeSkillScore(responses, lovableApiKey);
     const skillPercent = Math.round((skillAnalysis.total / 100) * 100);
+    console.log(`✅ SKILL Score: ${skillPercent}% (${skillAnalysis.total}/100)`);
 
-    console.log('Determining quadrant...');
+    console.log('📊 Determining quadrant...');
     const quadrant = determineQuadrant(willPercent, skillPercent);
+    console.log(`✅ Quadrant: ${quadrant}`);
 
     // Extract verticals with priority structure
     const q1 = responses.find(r => r.question_number === 1);
@@ -420,8 +514,8 @@ serve(async (req) => {
     const q5 = responses.find(r => r.question_number === 5);
     const leadershipStyle = q5?.response_data?.leadership_style || 'unknown';
 
-    console.log('Generating recommendations...');
-    const recommendations = generateRecommendations(quadrant, verticals, leadershipStyle);
+    console.log('Generating vertical-aware recommendations...');
+    const recommendations = await generateRecommendations(quadrant, verticals, leadershipStyle, supabase);
 
     console.log('Generating personalized reasoning...');
     const reasoning = await generateReasoning(
@@ -445,6 +539,7 @@ serve(async (req) => {
         recommended_role: recommendations[0].role,
         role_explanation: recommendations[0].reason,
         vertical_matches: verticals,
+        vertical_priority_order: verticals.map((id, index) => ({ id, priority: index + 1 })),
         leadership_style: leadershipStyle,
         recommendations: recommendations,
         reasoning: reasoning,

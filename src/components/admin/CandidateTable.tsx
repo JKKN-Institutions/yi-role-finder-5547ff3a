@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, Star, Download, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { exportCandidatesData } from '@/utils/exportUtils';
 
 interface Candidate {
   id: string;
@@ -27,6 +28,7 @@ interface Candidate {
   is_shortlisted: boolean;
   created_at: string;
   confidence: number;
+  vertical_matches?: string[];
 }
 
 export function CandidateTable() {
@@ -37,14 +39,26 @@ export function CandidateTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [quadrantFilter, setQuadrantFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [verticalFilter, setVerticalFilter] = useState('all');
+  const [verticals, setVerticals] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     fetchCandidates();
+    fetchVerticals();
   }, []);
 
   useEffect(() => {
     filterCandidates();
-  }, [candidates, searchTerm, quadrantFilter, statusFilter]);
+  }, [candidates, searchTerm, quadrantFilter, statusFilter, verticalFilter]);
+
+  const fetchVerticals = async () => {
+    const { data } = await supabase
+      .from('verticals')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('display_order');
+    if (data) setVerticals(data);
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -58,6 +72,7 @@ export function CandidateTable() {
           quadrant,
           recommended_role,
           recommendations,
+          vertical_matches,
           assessments (
             user_email,
             review_status,
@@ -86,6 +101,7 @@ export function CandidateTable() {
           is_shortlisted: assessment?.is_shortlisted || false,
           created_at: assessment?.created_at || '',
           confidence: topRecommendation.confidence || 0,
+          vertical_matches: r.vertical_matches || [],
         };
       }) || [];
 
@@ -112,6 +128,12 @@ export function CandidateTable() {
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(c => c.review_status === statusFilter);
+    }
+
+    if (verticalFilter !== 'all') {
+      filtered = filtered.filter(c => 
+        (c as any).vertical_matches?.includes(verticalFilter)
+      );
     }
 
     setFilteredCandidates(filtered);
@@ -178,9 +200,26 @@ export function CandidateTable() {
             <SelectItem value="selected">Selected</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm">
+        
+        <Select value={verticalFilter} onValueChange={setVerticalFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by vertical" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Verticals</SelectItem>
+            {verticals.map(v => (
+              <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => exportCandidatesData(filteredCandidates)}
+          disabled={filteredCandidates.length === 0}
+        >
           <Download className="w-4 h-4 mr-2" />
-          Export
+          Export CSV
         </Button>
       </div>
 
