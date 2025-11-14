@@ -20,6 +20,7 @@ export function CandidateDetail() {
   const [adminNotes, setAdminNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('new');
   const [isShortlisted, setIsShortlisted] = useState(false);
+  const [verticalNames, setVerticalNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (assessmentId) {
@@ -56,8 +57,19 @@ export function CandidateDetail() {
 
       if (responsesError) throw responsesError;
 
+      // Fetch vertical names
+      const { data: verticalsData } = await supabase
+        .from('verticals')
+        .select('id, name');
+      
+      const verticalMap: Record<string, string> = {};
+      verticalsData?.forEach(v => {
+        verticalMap[v.id] = v.name;
+      });
+
       setCandidate({ ...assessment, ...result });
       setResponses(responseData || []);
+      setVerticalNames(verticalMap);
       setAdminNotes(assessment.admin_notes || '');
       setReviewStatus(assessment.review_status || 'new');
       setIsShortlisted(assessment.is_shortlisted || false);
@@ -184,6 +196,26 @@ export function CandidateDetail() {
                       style={{ width: `${candidate.will_score}%` }}
                     />
                   </div>
+                  {candidate.scoring_breakdown?.will && (
+                    <div className="mt-2 space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Q2 Commitment:</span>
+                        <span>{candidate.scoring_breakdown.will.breakdown.q2_commitment}/25</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Q3 Achievement:</span>
+                        <span>{candidate.scoring_breakdown.will.breakdown.q3_achievement}/25</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Q4 Constraints:</span>
+                        <span>{candidate.scoring_breakdown.will.breakdown.q4_constraints}/30</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Q5 Leadership:</span>
+                        <span>{candidate.scoring_breakdown.will.breakdown.q5_leadership}/20</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
@@ -196,12 +228,53 @@ export function CandidateDetail() {
                       style={{ width: `${candidate.skill_score}%` }}
                     />
                   </div>
+                  {candidate.scoring_breakdown?.skill && (
+                    <div className="mt-2 space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Sophistication:</span>
+                        <span>{candidate.scoring_breakdown.skill.breakdown.sophistication}/25</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Strategic:</span>
+                        <span>{candidate.scoring_breakdown.skill.breakdown.strategic_thinking}/25</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Outcome Focus:</span>
+                        <span>{candidate.scoring_breakdown.skill.breakdown.outcome_orientation}/25</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Leadership:</span>
+                        <span>{candidate.scoring_breakdown.skill.breakdown.leadership_signals}/25</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="pt-2">
                   <Badge className="w-full justify-center py-2">{candidate.quadrant}</Badge>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Vertical Preferences Card */}
+            {candidate.vertical_matches && candidate.vertical_matches.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Vertical Preferences</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {candidate.vertical_matches.map((verticalId: string, index: number) => (
+                    <div key={verticalId} className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        #{index + 1}
+                      </Badge>
+                      <span className="text-sm">
+                        {verticalNames[verticalId] || verticalId}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Center Panel - AI Analysis & Responses */}
