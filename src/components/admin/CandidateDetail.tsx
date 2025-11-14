@@ -7,15 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Star, Mail, Calendar, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { FeedbackForm } from './FeedbackForm';
+import { CandidateTimeline } from './CandidateTimeline';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function CandidateDetail() {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [candidate, setCandidate] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,11 +77,7 @@ export function CandidateDetail() {
       setIsShortlisted(assessment.is_shortlisted || false);
     } catch (error) {
       console.error('Error fetching candidate details:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load candidate details',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load candidate details');
     } finally {
       setIsLoading(false);
     }
@@ -89,29 +85,41 @@ export function CandidateDetail() {
 
   const handleSaveChanges = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const updates: any = {
+        review_status: reviewStatus,
+        admin_notes: adminNotes,
+        is_shortlisted: isShortlisted,
+        reviewed_by: user?.id,
+        reviewed_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
-        .from('assessments')
-        .update({
-          admin_notes: adminNotes,
-          review_status: reviewStatus,
-          is_shortlisted: isShortlisted,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', assessmentId);
+        .from("assessments")
+        .update(updates)
+        .eq("id", assessmentId);
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Changes saved successfully',
+      // Log the activity
+      await supabase.from("audit_log").insert({
+        user_id: user?.id,
+        action: "status_change",
+        resource_type: "assessment",
+        resource_id: assessmentId,
+        details: {
+          from: candidate?.review_status,
+          to: reviewStatus,
+          notes: adminNotes,
+          shortlisted: isShortlisted,
+        },
       });
+
+      toast.success("Changes saved successfully");
     } catch (error) {
-      console.error('Error saving changes:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save changes',
-        variant: 'destructive',
-      });
+      console.error("Error saving changes:", error);
+      toast.error("Failed to save changes");
     }
   };
 
@@ -446,6 +454,8 @@ export function CandidateDetail() {
               recommendedRole={candidate.recommended_role}
               onFeedbackSubmitted={fetchCandidateDetails}
             />
+            
+            <CandidateTimeline assessmentId={assessmentId!} />
           </div>
         </div>
       </div>

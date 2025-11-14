@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Upload } from "lucide-react";
 
 interface Vertical {
   id: string;
@@ -28,6 +28,8 @@ export const VerticalsManagement = () => {
     description: "",
     is_active: true,
   });
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchVerticals();
@@ -143,6 +145,49 @@ export const VerticalsManagement = () => {
     });
   };
 
+  const handleBulkUpload = async () => {
+    if (!csvFile) {
+      toast.error("Please select a CSV file");
+      return;
+    }
+
+    try {
+      const text = await csvFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header row if it exists
+      const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+      const maxOrder = Math.max(...verticals.map(v => v.display_order), 0);
+      
+      const verticalsToInsert = lines.slice(startIndex).map((line, index) => {
+        const [name, description] = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+        return {
+          name,
+          description: description || '',
+          display_order: maxOrder + index + 1,
+          is_active: true,
+        };
+      }).filter(v => v.name);
+
+      if (verticalsToInsert.length === 0) {
+        toast.error("No valid verticals found in CSV");
+        return;
+      }
+
+      const { error } = await supabase.from("verticals").insert(verticalsToInsert);
+
+      if (error) throw error;
+      
+      toast.success(`Successfully uploaded ${verticalsToInsert.length} verticals`);
+      setIsBulkUploadOpen(false);
+      setCsvFile(null);
+      fetchVerticals();
+    } catch (error) {
+      console.error("Error uploading verticals:", error);
+      toast.error("Failed to upload verticals");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -160,13 +205,47 @@ export const VerticalsManagement = () => {
             Manage Yi verticals and their descriptions
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Vertical
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Bulk Upload Verticals</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Upload CSV File</label>
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    CSV format: name, description (one vertical per line)
+                  </p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsBulkUploadOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleBulkUpload}>Upload</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Vertical
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -225,6 +304,7 @@ export const VerticalsManagement = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Table>

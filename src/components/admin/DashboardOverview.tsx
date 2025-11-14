@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { WillSkillMatrix } from './WillSkillMatrix';
+import { RealtimeAssessmentWidget } from './RealtimeAssessmentWidget';
 
 interface DashboardStats {
   totalSubmissions: number;
@@ -120,6 +121,9 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
+      {/* Real-time Widget */}
+      <RealtimeAssessmentWidget />
+
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat) => (
