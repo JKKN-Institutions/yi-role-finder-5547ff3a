@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import yiLogo from "@/assets/yi-logo.png";
+import yiLogo from "@/assets/yi-logo-official.png";
 
 export const Hero = () => {
   const navigate = useNavigate();
