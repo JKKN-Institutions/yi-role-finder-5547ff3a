@@ -145,6 +145,29 @@ export const VerticalsManagement = () => {
     });
   };
 
+  const downloadTemplate = () => {
+    const csvContent = `name,description
+Climate Change,Working on climate solutions and sustainability
+Education Technology,Improving access to education through technology
+Healthcare Innovation,Advancing healthcare delivery and accessibility
+Social Impact,Creating positive social change in communities
+Economic Development,Fostering economic growth and opportunity`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'verticals_template.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Template downloaded successfully");
+  };
+
   const handleBulkUpload = async () => {
     if (!csvFile) {
       toast.error("Please select a CSV file");
@@ -219,7 +242,17 @@ export const VerticalsManagement = () => {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Upload CSV File</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Upload CSV File</label>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      onClick={downloadTemplate}
+                      className="h-auto p-0 text-xs"
+                    >
+                      Download Template
+                    </Button>
+                  </div>
                   <Input
                     type="file"
                     accept=".csv"
@@ -233,7 +266,9 @@ export const VerticalsManagement = () => {
                   <Button variant="outline" onClick={() => setIsBulkUploadOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleBulkUpload}>Upload</Button>
+                  <Button onClick={handleBulkUpload} disabled={!csvFile}>
+                    Upload
+                  </Button>
                 </div>
               </div>
             </DialogContent>
