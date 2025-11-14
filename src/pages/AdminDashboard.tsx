@@ -8,6 +8,7 @@ import { CandidateTable } from '@/components/admin/CandidateTable';
 import { AnalyticsView } from '@/components/admin/AnalyticsView';
 import { ValidationMetrics } from '@/components/admin/ValidationMetrics';
 import { VerticalsManagement } from '@/components/admin/VerticalsManagement';
+import { UserRoleManagement } from '@/components/admin/UserRoleManagement';
 
 export default function AdminDashboard() {
   const { signOut, user } = useAuth();
@@ -47,7 +48,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Overview
@@ -67,6 +68,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="verticals">
               <FileText className="w-4 h-4 mr-2" />
               Verticals
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-2" />
+              Users
             </TabsTrigger>
           </TabsList>
 
@@ -88,6 +93,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="verticals" className="space-y-6">
             <VerticalsManagement />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UserRoleManagement />
           </TabsContent>
         </Tabs>
       </main>

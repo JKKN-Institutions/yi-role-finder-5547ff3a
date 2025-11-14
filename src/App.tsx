@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import Login from "./pages/Login";
+import Setup from "./pages/Setup";
 import AdminDashboard from "./pages/AdminDashboard";
 import { CandidateDetail } from "@/components/admin/CandidateDetail";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/assessment" element={<Assessment />} />
               <Route path="/results" element={<Results />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/setup" element={<Setup />} />
               <Route 
                 path="/admin" 
                 element={
