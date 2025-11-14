@@ -30,6 +30,8 @@ export const VerticalsManagement = () => {
   });
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [previewData, setPreviewData] = useState<Array<{ name: string; description: string; warnings: string[] }>>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     fetchVerticals();
@@ -189,7 +191,7 @@ Economic Development,Fostering economic growth and opportunity`;
     return result;
   };
 
-  const handleBulkUpload = async (replaceAll: boolean = false) => {
+  const handlePreviewCSV = async () => {
     if (!csvFile) {
       toast.error("Please select a CSV file");
       return;
@@ -202,27 +204,73 @@ Economic Development,Fostering economic growth and opportunity`;
       // Skip header row if it exists
       const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
       
-      const verticalsToInsert = lines.slice(startIndex).map((line, index) => {
+      const parsed = lines.slice(startIndex).map((line) => {
         const [name, description] = parseCSVLine(line);
+        const warnings: string[] = [];
+        
+        if (!name) {
+          warnings.push("Missing name");
+        } else if (name.length > 100) {
+          warnings.push("Name too long (max 100 characters)");
+        }
+        
+        if (!description) {
+          warnings.push("Missing description");
+        } else if (description.length > 1000) {
+          warnings.push("Description too long (max 1000 characters)");
+        }
+        
         return {
           name: name || '',
           description: description || '',
-          display_order: index + 1,
-          is_active: true,
+          warnings
         };
-      }).filter(v => v.name);
+      });
 
-      if (verticalsToInsert.length === 0) {
-        toast.error("No valid verticals found in CSV");
+      // Check for duplicates
+      const nameCount = new Map<string, number>();
+      parsed.forEach(item => {
+        if (item.name) {
+          nameCount.set(item.name, (nameCount.get(item.name) || 0) + 1);
+        }
+      });
+      
+      parsed.forEach(item => {
+        if (item.name && nameCount.get(item.name)! > 1) {
+          item.warnings.push("Duplicate name in CSV");
+        }
+      });
+
+      setPreviewData(parsed);
+      setShowPreview(true);
+    } catch (error) {
+      console.error("Error parsing CSV:", error);
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
+  const handleBulkUpload = async (replaceAll: boolean = false) => {
+    try {
+      const validVerticals = previewData.filter(v => v.name && v.warnings.length === 0);
+      
+      if (validVerticals.length === 0) {
+        toast.error("No valid verticals to upload");
         return;
       }
+
+      const verticalsToInsert = validVerticals.map((v, index) => ({
+        name: v.name,
+        description: v.description,
+        display_order: index + 1,
+        is_active: true,
+      }));
 
       // If replace all, delete existing verticals first
       if (replaceAll) {
         const { error: deleteError } = await supabase
           .from("verticals")
           .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+          .neq('id', '00000000-0000-0000-0000-000000000000');
         
         if (deleteError) throw deleteError;
       }
@@ -234,6 +282,8 @@ Economic Development,Fostering economic growth and opportunity`;
       toast.success(`Successfully ${replaceAll ? 'replaced' : 'uploaded'} ${verticalsToInsert.length} verticals`);
       setIsBulkUploadOpen(false);
       setCsvFile(null);
+      setPreviewData([]);
+      setShowPreview(false);
       fetchVerticals();
     } catch (error) {
       console.error("Error uploading verticals:", error);
@@ -266,51 +316,139 @@ Economic Development,Fostering economic growth and opportunity`;
                 Bulk Upload
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
               <DialogHeader>
-                <DialogTitle>Bulk Upload Verticals</DialogTitle>
+                <DialogTitle>
+                  {showPreview ? 'Preview Upload' : 'Bulk Upload Verticals'}
+                </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Upload CSV File</label>
+              {!showPreview ? (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Upload CSV File</label>
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        onClick={downloadTemplate}
+                        className="h-auto p-0 text-xs"
+                      >
+                        Download Template
+                      </Button>
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => {
+                        setCsvFile(e.target.files?.[0] || null);
+                        setShowPreview(false);
+                        setPreviewData([]);
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      CSV format: name, description (one vertical per line)
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => {
+                      setIsBulkUploadOpen(false);
+                      setCsvFile(null);
+                      setShowPreview(false);
+                      setPreviewData([]);
+                    }}>
+                      Cancel
+                    </Button>
                     <Button 
-                      variant="link" 
-                      size="sm" 
-                      onClick={downloadTemplate}
-                      className="h-auto p-0 text-xs"
+                      onClick={handlePreviewCSV} 
+                      disabled={!csvFile}
                     >
-                      Download Template
+                      Preview
                     </Button>
                   </div>
-                  <Input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    CSV format: name, description (one vertical per line)
-                  </p>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsBulkUploadOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleBulkUpload(false)} 
-                    disabled={!csvFile}
-                  >
-                    Add to Existing
-                  </Button>
-                  <Button 
-                    onClick={() => handleBulkUpload(true)} 
-                    disabled={!csvFile}
-                  >
-                    Replace All
-                  </Button>
+              ) : (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {previewData.filter(v => v.warnings.length === 0).length} valid verticals found
+                        {previewData.filter(v => v.warnings.length > 0).length > 0 && 
+                          ` (${previewData.filter(v => v.warnings.length > 0).length} with warnings)`
+                        }
+                      </p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setShowPreview(false);
+                          setPreviewData([]);
+                        }}
+                      >
+                        Back to Upload
+                      </Button>
+                    </div>
+                    <div className="border rounded-md max-h-96 overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead className="w-48">Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="w-32">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {previewData.map((item, index) => (
+                            <TableRow key={index} className={item.warnings.length > 0 ? 'bg-destructive/10' : ''}>
+                              <TableCell className="font-mono text-xs">{index + 1}</TableCell>
+                              <TableCell className="font-medium truncate max-w-[200px]" title={item.name}>
+                                {item.name || <span className="text-muted-foreground italic">Empty</span>}
+                              </TableCell>
+                              <TableCell className="text-xs truncate max-w-md" title={item.description}>
+                                {item.description || <span className="text-muted-foreground italic">Empty</span>}
+                              </TableCell>
+                              <TableCell>
+                                {item.warnings.length === 0 ? (
+                                  <span className="text-xs text-green-600">Valid</span>
+                                ) : (
+                                  <div className="text-xs text-destructive space-y-1">
+                                    {item.warnings.map((warning, i) => (
+                                      <div key={i}>• {warning}</div>
+                                    ))}
+                                  </div>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => {
+                      setIsBulkUploadOpen(false);
+                      setCsvFile(null);
+                      setShowPreview(false);
+                      setPreviewData([]);
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleBulkUpload(false)} 
+                      disabled={previewData.filter(v => v.warnings.length === 0).length === 0}
+                    >
+                      Add to Existing
+                    </Button>
+                    <Button 
+                      onClick={() => handleBulkUpload(true)} 
+                      disabled={previewData.filter(v => v.warnings.length === 0).length === 0}
+                    >
+                      Replace All
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </DialogContent>
           </Dialog>
 
