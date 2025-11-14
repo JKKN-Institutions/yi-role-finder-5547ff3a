@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Assessment, AssessmentResponse } from '@/types/assessment';
+import { toast } from 'sonner';
 
 interface AssessmentContextType {
   assessment: Assessment | null;
@@ -87,7 +88,10 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Update assessment status to completed
       await supabase
         .from('assessments')
-        .update({ status: 'completed' })
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
         .eq('id', assessment.id);
 
       // Trigger AI analysis
@@ -97,9 +101,15 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       if (response.error) throw response.error;
 
-      setAssessment(prev => prev ? { ...prev, status: 'analyzed' } : null);
+      // Clear assessment from context - applicant's role ends here
+      setAssessment(null);
+      setResponses({});
+      setCurrentQuestion(1);
+      
+      toast.success("Thank you! Your assessment has been submitted successfully.");
     } catch (error) {
       console.error('Error submitting assessment:', error);
+      toast.error("Failed to submit assessment");
       throw error;
     } finally {
       setIsLoading(false);
