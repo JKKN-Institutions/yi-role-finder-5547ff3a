@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Star, Mail, Calendar, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FeedbackForm } from './FeedbackForm';
 
 export function CandidateDetail() {
   const { assessmentId } = useParams();
@@ -288,6 +289,12 @@ export function CandidateDetail() {
                 </Button>
               </CardContent>
             </Card>
+
+            <FeedbackForm
+              assessmentId={assessmentId!}
+              recommendedRole={candidate.recommended_role}
+              onFeedbackSubmitted={fetchCandidateDetails}
+            />
           </div>
         </div>
       </div>
