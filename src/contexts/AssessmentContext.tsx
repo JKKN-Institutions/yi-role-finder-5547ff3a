@@ -11,7 +11,7 @@ interface AssessmentContextType {
   saveResponse: (questionNumber: number, questionText: string, data: any) => Promise<void>;
   goToQuestion: (questionNumber: number) => void;
   submitAssessment: () => Promise<void>;
-  startAssessment: (email: string) => Promise<void>;
+  startAssessment: (email: string, fullName: string) => Promise<void>;
 }
 
 const AssessmentContext = createContext<AssessmentContextType | undefined>(undefined);
@@ -22,12 +22,12 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  const startAssessment = async (email: string) => {
+  const startAssessment = async (email: string, fullName: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('assessments')
-        .insert({ user_email: email })
+        .insert({ user_email: email, user_name: fullName })
         .select()
         .single();
 
