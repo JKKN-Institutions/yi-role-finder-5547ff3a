@@ -38,8 +38,16 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Generate session ID for anonymous tracking
       const sessionId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Get current user session (optional - may be null for anonymous users)
+      // Ensure we have a valid session (create anonymous session if needed)
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session found, signing in anonymously...');
+        const { error: anonError } = await supabase.auth.signInAnonymously();
+        if (anonError) {
+          console.error('Failed to create anonymous session:', anonError);
+          throw new Error('Failed to authenticate. Please try again.');
+        }
+      }
       
       const { data, error } = await supabase
         .from('assessments')
