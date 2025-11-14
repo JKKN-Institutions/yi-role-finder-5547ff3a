@@ -92,12 +92,34 @@ const Assessment = () => {
           <form onSubmit={handleStart} className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm sm:text-base">Your Full Name</Label>
-              <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required className="text-base h-12 sm:h-auto" disabled={isStarting} />
+              <Input 
+                id="fullName" 
+                name="name"
+                type="text" 
+                placeholder="John Doe" 
+                value={fullName} 
+                onChange={e => setFullName(e.target.value)} 
+                autoComplete="name"
+                required 
+                className="text-base h-12 sm:h-auto" 
+                disabled={isStarting} 
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm sm:text-base">Your Email Address</Label>
-              <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="text-base h-12 sm:h-auto" disabled={isStarting} />
+              <Input 
+                id="email" 
+                name="email"
+                type="email" 
+                placeholder="your.email@example.com" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                autoComplete="email"
+                required 
+                className="text-base h-12 sm:h-auto" 
+                disabled={isStarting} 
+              />
               <p className="text-xs text-muted-foreground">
                 We&apos;ll use this to save your progress and send you results
               </p>
