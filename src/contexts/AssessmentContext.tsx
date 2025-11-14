@@ -25,17 +25,40 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const startAssessment = async (email: string, fullName: string) => {
     setIsLoading(true);
     try {
+      console.log('Starting assessment with:', { email, fullName });
+      
+      // Validate inputs
+      if (!email || !email.trim()) {
+        throw new Error('Email is required');
+      }
+      if (!fullName || !fullName.trim()) {
+        throw new Error('Full name is required');
+      }
+      
       const { data, error } = await supabase
         .from('assessments')
-        .insert({ user_email: email, user_name: fullName })
+        .insert({ user_email: email.trim(), user_name: fullName.trim() })
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error(error.message || 'Failed to create assessment');
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from assessment creation');
+      }
+      
       setAssessment(data);
       setCurrentQuestion(1);
+      console.log('Assessment started successfully');
     } catch (error) {
       console.error('Error starting assessment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start assessment';
+      toast.error(errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
