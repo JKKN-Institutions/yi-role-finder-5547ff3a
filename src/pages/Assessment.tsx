@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +96,14 @@ const Assessment = () => {
             </Button>
           </form>
 
-          
+          <div className="mt-6 text-center">
+            <Link 
+              to="/login" 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Admin Login
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>;
