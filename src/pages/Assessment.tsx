@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
 import { AssessmentFlow } from "@/components/assessment/AssessmentFlow";
 import { toast } from "sonner";
@@ -18,38 +18,65 @@ const Assessment = () => {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [isStarting, setIsStarting] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const validateName = (name: string) => {
+    if (!name.trim()) {
+      setNameError("Full name is required");
+      return false;
+    }
+    if (name.trim().length < 2) {
+      setNameError("Name must be at least 2 characters");
+      return false;
+    }
+    setNameError("");
+    return true;
+  };
+
+  const validateEmail = (email: string) => {
+    if (!email.trim()) {
+      setEmailError("Email is required");
+      return false;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFullName(value);
+    if (value) validateName(value);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value) validateEmail(value);
+  };
+
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted with:', { email, fullName });
-    
-    // Trim and validate
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
     
-    if (!trimmedName) {
-      toast.error("Please enter your full name");
-      return;
-    }
+    const isNameValid = validateName(fullName);
+    const isEmailValid = validateEmail(email);
     
-    if (trimmedName.length < 2) {
-      toast.error("Name must be at least 2 characters");
-      return;
-    }
-    
-    if (!trimmedEmail || !trimmedEmail.includes("@")) {
-      toast.error("Please enter a valid email address");
+    if (!isNameValid || !isEmailValid) {
       return;
     }
     
     setIsStarting(true);
     try {
-      console.log('Calling startAssessment...');
       await startAssessment(trimmedEmail, trimmedName);
       toast.success("Assessment started!");
     } catch (error) {
       console.error("Error in handleStart:", error);
-      // Error toast is already shown in startAssessment
     } finally {
       setIsStarting(false);
     }
@@ -98,12 +125,16 @@ const Assessment = () => {
                 type="text" 
                 placeholder="John Doe" 
                 value={fullName} 
-                onChange={e => setFullName(e.target.value)} 
+                onChange={handleNameChange}
+                onBlur={() => fullName && validateName(fullName)}
                 autoComplete="name"
                 required 
-                className="text-base h-12 sm:h-auto" 
+                className={`text-base h-12 sm:h-auto ${nameError ? 'border-destructive' : ''}`}
                 disabled={isStarting} 
               />
+              {nameError && (
+                <p className="text-xs text-destructive mt-1">{nameError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -114,20 +145,33 @@ const Assessment = () => {
                 type="email" 
                 placeholder="your.email@example.com" 
                 value={email} 
-                onChange={e => setEmail(e.target.value)} 
+                onChange={handleEmailChange}
+                onBlur={() => email && validateEmail(email)}
                 autoComplete="email"
                 required 
-                className="text-base h-12 sm:h-auto" 
+                className={`text-base h-12 sm:h-auto ${emailError ? 'border-destructive' : ''}`}
                 disabled={isStarting} 
               />
+              {emailError && (
+                <p className="text-xs text-destructive mt-1">{emailError}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 We&apos;ll use this to save your progress and send you results
               </p>
             </div>
 
             <Button type="submit" disabled={isStarting} className="w-full bg-yi-orange hover:bg-yi-orange/90 text-primary-foreground font-semibold h-14 sm:h-auto sm:py-6 text-base sm:text-lg" size="lg">
-              {isStarting ? "Starting..." : "Start Assessment"}
-              <ArrowRight className="ml-2 w-5 h-5" />
+              {isStarting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  Start Assessment
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </>
+              )}
             </Button>
           </form>
 
