@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, ArrowLeft } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
 import { AssessmentFlow } from "@/components/assessment/AssessmentFlow";
 import { toast } from "sonner";
@@ -106,6 +106,15 @@ const Assessment = () => {
       duration: 0.5
     }} className="relative z-10 w-full max-w-md">
         <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-5 sm:p-8 shadow-card backdrop-blur-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
           <div className="flex flex-col items-center mb-6 sm:mb-8">
             <img src={yiLogo} alt="Yi Erode Logo" className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 animate-float drop-shadow-glow" />
             <h1 className="text-xl sm:text-2xl font-bold text-center mb-2">
