@@ -85,20 +85,20 @@ export const AssessmentFlow = () => {
   const isLastQuestion = currentQuestion === QUESTIONS.length;
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background py-4 sm:py-8 px-3 sm:px-4">
+      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
         {/* Logo Header */}
         <div className="flex justify-center">
           <img 
             src={yiLogo} 
             alt="Yi Erode Logo" 
-            className="h-12 w-auto"
+            className="h-10 sm:h-12 w-auto"
           />
         </div>
         
         <ProgressBar currentStep={currentQuestion} totalSteps={QUESTIONS.length} />
 
-        <div className="bg-card border border-border rounded-xl p-6 md:p-8 shadow-card">
+        <div className="bg-card border border-border rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 shadow-card">
           <AnimatePresence mode="wait">
             {currentQuestion === 1 && (
               <Question1
@@ -144,14 +144,14 @@ export const AssessmentFlow = () => {
             variant="ghost"
             onClick={handlePrevious}
             disabled={isLoading || isSubmitting}
-            className="w-full"
+            className="w-full h-12 sm:h-auto"
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Previous Question
           </Button>
         )}
 
-        <p className="text-xs text-center text-muted-foreground">
+        <p className="text-xs sm:text-sm text-center text-muted-foreground px-2">
           Your progress is automatically saved
         </p>
       </div>

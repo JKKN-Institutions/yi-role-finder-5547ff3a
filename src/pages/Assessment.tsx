@@ -46,11 +46,11 @@ const Assessment = () => {
   }
 
   // Show email input screen
-  return <div className="min-h-screen bg-gradient-hero animate-gradient-shift bg-[length:200%_200%] flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-hero animate-gradient-shift bg-[length:200%_200%] flex items-center justify-center p-3 sm:p-4">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
-      <div className="absolute top-20 left-10 w-72 h-72 bg-yi-orange/20 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-yi-cyan/10 rounded-full blur-3xl animate-float" style={{
+      <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-48 sm:w-72 h-48 sm:h-72 bg-yi-orange/20 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-10 sm:bottom-20 right-5 sm:right-10 w-64 sm:w-96 h-64 sm:h-96 bg-yi-cyan/10 rounded-full blur-3xl animate-float" style={{
       animationDelay: "1s"
     }} />
 
@@ -63,43 +63,41 @@ const Assessment = () => {
     }} transition={{
       duration: 0.5
     }} className="relative z-10 w-full max-w-md">
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-card backdrop-blur-sm">
-          <div className="flex flex-col items-center mb-8">
-            <img src={yiLogo} alt="Yi Erode Logo" className="w-16 h-16 mb-4 animate-float drop-shadow-glow" />
-            <h1 className="text-2xl font-bold text-center mb-2">
+        <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-5 sm:p-8 shadow-card backdrop-blur-sm">
+          <div className="flex flex-col items-center mb-6 sm:mb-8">
+            <img src={yiLogo} alt="Yi Erode Logo" className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 animate-float drop-shadow-glow" />
+            <h1 className="text-xl sm:text-2xl font-bold text-center mb-2">
               Yi Erode EC 2026
             </h1>
-            <p className="text-muted-foreground text-center text-sm">
+            <p className="text-muted-foreground text-center text-xs sm:text-sm">
               Intelligent Role Matching Assessment
             </p>
           </div>
 
-          <form onSubmit={handleStart} className="space-y-6">
+          <form onSubmit={handleStart} className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Your Full Name</Label>
-              <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required className="text-base" disabled={isStarting} />
+              <Label htmlFor="fullName" className="text-sm sm:text-base">Your Full Name</Label>
+              <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required className="text-base h-12 sm:h-auto" disabled={isStarting} />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Your Email Address</Label>
-              <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="text-base" disabled={isStarting} />
+              <Label htmlFor="email" className="text-sm sm:text-base">Your Email Address</Label>
+              <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="text-base h-12 sm:h-auto" disabled={isStarting} />
               <p className="text-xs text-muted-foreground">
                 We&apos;ll use this to save your progress and send you results
               </p>
             </div>
 
-            
-
-            <Button type="submit" disabled={isStarting} className="w-full bg-yi-orange hover:bg-yi-orange/90 text-primary-foreground font-semibold py-6" size="lg">
+            <Button type="submit" disabled={isStarting} className="w-full bg-yi-orange hover:bg-yi-orange/90 text-primary-foreground font-semibold h-14 sm:h-auto sm:py-6 text-base sm:text-lg" size="lg">
               {isStarting ? "Starting..." : "Start Assessment"}
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-5 sm:mt-6 text-center">
             <Link 
               to="/login" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-block py-2"
             >
               Admin Login
             </Link>
