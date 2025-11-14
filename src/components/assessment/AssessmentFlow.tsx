@@ -11,6 +11,7 @@ import { Question3 } from "./Question3";
 import { Question4 } from "./Question4";
 import { Question5 } from "./Question5";
 import { toast } from "sonner";
+import yiLogo from "@/assets/yi-logo-official.png";
 
 const QUESTIONS = [
   { 
@@ -71,7 +72,7 @@ export const AssessmentFlow = () => {
     setIsSubmitting(true);
     try {
       await submitAssessment();
-      navigate('/');
+      navigate('/results');
     } catch (error) {
       console.error('Error submitting assessment:', error);
       toast.error("Failed to submit assessment");
@@ -86,6 +87,15 @@ export const AssessmentFlow = () => {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Logo Header */}
+        <div className="flex justify-center">
+          <img 
+            src={yiLogo} 
+            alt="Yi Erode Logo" 
+            className="h-12 w-auto"
+          />
+        </div>
+        
         <ProgressBar currentStep={currentQuestion} totalSteps={QUESTIONS.length} />
 
         <div className="bg-card border border-border rounded-xl p-6 md:p-8 shadow-card">

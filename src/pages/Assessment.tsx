@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
 import { AssessmentFlow } from "@/components/assessment/AssessmentFlow";
 import { toast } from "sonner";
-import yiLogo from "@/assets/yi-logo.png";
+import yiLogo from "@/assets/yi-logo-official.png";
 
 const Assessment = () => {
   const navigate = useNavigate();
