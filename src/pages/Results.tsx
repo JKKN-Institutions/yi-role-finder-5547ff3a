@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, Download, CheckCircle2, TrendingUp, Target } from "lucide-react";
+import { ArrowLeft, Share2, CheckCircle2, TrendingUp, Target, Award } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AssessmentResult } from "@/types/assessment";
 import { toast } from "sonner";
+import { QuadrantChart } from "@/components/results/QuadrantChart";
 import yiLogo from "@/assets/yi-logo.png";
 
 const Results = () => {
@@ -36,7 +37,8 @@ const Results = () => {
         if (data) {
           setResult({
             ...data,
-            key_insights: data.key_insights as AssessmentResult['key_insights']
+            key_insights: data.key_insights as AssessmentResult['key_insights'],
+            recommendations: data.recommendations as AssessmentResult['recommendations']
           });
         }
       } catch (error) {
@@ -51,7 +53,7 @@ const Results = () => {
   }, [assessment, navigate]);
 
   const handleShare = () => {
-    const text = `I just completed the Yi Erode EC 2026 Assessment! My recommended role: ${result?.recommended_role}`;
+    const text = `I just completed the Yi Erode EC 2026 Assessment! My recommended role: ${result?.recommended_role} (${result?.quadrant})`;
     if (navigator.share) {
       navigator.share({ text, url: window.location.href });
     } else {
@@ -65,7 +67,8 @@ const Results = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yi-orange border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Analyzing your responses...</p>
+          <p className="text-muted-foreground">Analyzing your responses with AI...</p>
+          <p className="text-xs text-muted-foreground mt-2">This takes about 2 seconds</p>
         </div>
       </div>
     );
@@ -113,15 +116,34 @@ const Results = () => {
             <div className="flex items-start gap-6">
               <img src={yiLogo} alt="Yi Logo" className="w-16 h-16 animate-float" />
               <div className="flex-1">
-                <Badge className="mb-3 bg-yi-orange">Your Best Fit Role</Badge>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge className="bg-yi-orange">Your Best Fit Role</Badge>
+                  <Badge variant="outline">{result.quadrant}</Badge>
+                </div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-3">
                   {result.recommended_role}
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-lg mb-4">
                   {result.role_explanation}
                 </p>
               </div>
             </div>
+          </Card>
+        </motion.div>
+
+        {/* Quadrant Visualization */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="p-8">
+            <h3 className="font-semibold text-lg mb-6 text-center">Will-Skill Quadrant Analysis</h3>
+            <QuadrantChart 
+              willScore={result.will_score} 
+              skillScore={result.skill_score} 
+              quadrant={result.quadrant} 
+            />
           </Card>
         </motion.div>
 
@@ -130,7 +152,7 @@ const Results = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
           >
             <Card className="p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -144,7 +166,7 @@ const Results = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold">{result.will_score}/100</span>
+                  <span className="text-2xl font-bold">{result.will_score}%</span>
                   <span className="text-sm text-muted-foreground">
                     {result.key_insights.commitment_level.toUpperCase()}
                   </span>
@@ -157,7 +179,7 @@ const Results = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.4 }}
           >
             <Card className="p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -171,7 +193,7 @@ const Results = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold">{result.skill_score}/100</span>
+                  <span className="text-2xl font-bold">{result.skill_score}%</span>
                   <span className="text-sm text-muted-foreground">
                     {result.key_insights.skill_readiness.toUpperCase()}
                   </span>
@@ -181,6 +203,47 @@ const Results = () => {
             </Card>
           </motion.div>
         </div>
+
+        {/* AI Reasoning */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="p-6 bg-accent/5 border-accent/20">
+            <h3 className="font-semibold text-lg mb-3">AI Analysis</h3>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+              {result.reasoning}
+            </p>
+          </Card>
+        </motion.div>
+
+        {/* Role Recommendations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="p-6">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-yi-orange" />
+              Top 3 Role Recommendations
+            </h3>
+            <div className="space-y-4">
+              {result.recommendations?.map((rec, i) => (
+                <div key={i} className={`p-4 rounded-lg border-2 ${i === 0 ? 'border-yi-orange bg-yi-orange/5' : 'border-border'}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-base">{rec.role}</h4>
+                    <Badge variant={i === 0 ? "default" : "outline"} className={i === 0 ? "bg-yi-orange" : ""}>
+                      {rec.confidence}% fit
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{rec.reason}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Insights */}
         <motion.div
