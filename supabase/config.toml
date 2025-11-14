@@ -1,1 +1,4 @@
 project_id = "sbovxmeluiraobeixiii"
+
+[functions.analyze-assessment]
+verify_jwt = false
