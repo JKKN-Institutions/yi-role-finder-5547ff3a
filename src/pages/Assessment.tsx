@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Loader2, ArrowLeft } from "lucide-react";
 import { useAssessment } from "@/contexts/AssessmentContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AssessmentFlow } from "@/components/assessment/AssessmentFlow";
 import { toast } from "sonner";
 import yiLogo from "@/assets/yi-logo-official.png";
 const Assessment = () => {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const {
     assessment,
     startAssessment
@@ -20,6 +22,14 @@ const Assessment = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error("Please log in to start an assessment");
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
   const validateName = (name: string) => {
     if (!name.trim()) {
       setNameError("Full name is required");

@@ -35,9 +35,19 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         throw new Error('Full name is required');
       }
       
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('You must be logged in to start an assessment');
+      }
+      
       const { data, error } = await supabase
         .from('assessments')
-        .insert({ user_email: email.trim(), user_name: fullName.trim() })
+        .insert({ 
+          user_id: session.user.id,  // CRITICAL: Set user_id for RLS
+          user_email: email.trim(), 
+          user_name: fullName.trim() 
+        })
         .select()
         .single();
 
