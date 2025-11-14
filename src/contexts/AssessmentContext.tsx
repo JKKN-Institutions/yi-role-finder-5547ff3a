@@ -94,12 +94,8 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         })
         .eq('id', assessment.id);
 
-      // Trigger AI analysis
-      const response = await supabase.functions.invoke('analyze-assessment', {
-        body: { assessmentId: assessment.id }
-      });
-
-      if (response.error) throw response.error;
+      // Note: AI analysis will be triggered by admins from the dashboard
+      // This ensures proper access control and prevents abuse
 
       // Clear assessment from context - applicant's role ends here
       setAssessment(null);
