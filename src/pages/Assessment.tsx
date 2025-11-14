@@ -20,21 +20,36 @@ const Assessment = () => {
   const [isStarting, setIsStarting] = useState(false);
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim()) {
+    
+    console.log('Form submitted with:', { email, fullName });
+    
+    // Trim and validate
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+    
+    if (!trimmedName) {
       toast.error("Please enter your full name");
       return;
     }
-    if (!email.trim() || !email.includes("@")) {
+    
+    if (trimmedName.length < 2) {
+      toast.error("Name must be at least 2 characters");
+      return;
+    }
+    
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
       toast.error("Please enter a valid email address");
       return;
     }
+    
     setIsStarting(true);
     try {
-      await startAssessment(email, fullName);
+      console.log('Calling startAssessment...');
+      await startAssessment(trimmedEmail, trimmedName);
       toast.success("Assessment started!");
     } catch (error) {
-      console.error("Error starting assessment:", error);
-      toast.error("Failed to start assessment");
+      console.error("Error in handleStart:", error);
+      // Error toast is already shown in startAssessment
     } finally {
       setIsStarting(false);
     }
