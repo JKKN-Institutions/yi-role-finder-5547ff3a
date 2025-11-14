@@ -16,16 +16,21 @@ const Assessment = () => {
     startAssessment
   } = useAssessment();
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isStarting, setIsStarting] = useState(false);
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
     if (!email.trim() || !email.includes("@")) {
       toast.error("Please enter a valid email address");
       return;
     }
     setIsStarting(true);
     try {
-      await startAssessment(email);
+      await startAssessment(email, fullName);
       toast.success("Assessment started!");
     } catch (error) {
       console.error("Error starting assessment:", error);
@@ -70,6 +75,11 @@ const Assessment = () => {
           </div>
 
           <form onSubmit={handleStart} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Your Full Name</Label>
+              <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required className="text-base" disabled={isStarting} />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Your Email Address</Label>
               <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="text-base" disabled={isStarting} />
