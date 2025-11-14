@@ -18,10 +18,17 @@ export interface AssessmentResult {
   assessment_id: string;
   will_score: number;
   skill_score: number;
+  quadrant: string;
   recommended_role: string;
   role_explanation: string;
   vertical_matches: string[];
   leadership_style: string;
+  recommendations: Array<{
+    role: string;
+    confidence: number;
+    reason: string;
+  }>;
+  reasoning: string;
   key_insights: {
     commitment_level: string;
     skill_readiness: string;
