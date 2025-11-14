@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { LogOut, BarChart3, Users, FileText, TrendingUp, Target } from 'lucide-react';
+import { LogOut, BarChart3, Users, FileText, TrendingUp, Target, GitCompare } from 'lucide-react';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { CandidateTable } from '@/components/admin/CandidateTable';
 import { AnalyticsView } from '@/components/admin/AnalyticsView';
@@ -10,6 +10,7 @@ import { ValidationMetrics } from '@/components/admin/ValidationMetrics';
 import { VerticalsManagement } from '@/components/admin/VerticalsManagement';
 import { UserRoleManagement } from '@/components/admin/UserRoleManagement';
 import { HireTracking } from '@/components/admin/HireTracking';
+import { CandidateComparison } from '@/components/admin/CandidateComparison';
 
 export default function AdminDashboard() {
   const { signOut, user } = useAuth();
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-7">
+          <TabsList className="grid w-full max-w-6xl grid-cols-8">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Overview
@@ -57,6 +58,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="candidates">
               <Users className="w-4 h-4 mr-2" />
               Candidates
+            </TabsTrigger>
+            <TabsTrigger value="comparison">
+              <GitCompare className="w-4 h-4 mr-2" />
+              Compare
             </TabsTrigger>
             <TabsTrigger value="analytics">
               <FileText className="w-4 h-4 mr-2" />
@@ -68,7 +73,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="tracking">
               <Target className="w-4 h-4 mr-2" />
-              Hire Tracking
+              Tracking
             </TabsTrigger>
             <TabsTrigger value="verticals">
               <FileText className="w-4 h-4 mr-2" />
@@ -86,6 +91,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="candidates" className="space-y-6">
             <CandidateTable />
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-6">
+            <CandidateComparison />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

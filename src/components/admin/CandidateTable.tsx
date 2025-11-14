@@ -12,9 +12,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Star, Download, Filter } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Eye, Star, Download, Filter, CheckSquare, Square, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { exportCandidatesData } from '@/utils/exportUtils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Candidate {
   id: string;
@@ -33,6 +46,7 @@ interface Candidate {
 
 export function CandidateTable() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +55,10 @@ export function CandidateTable() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [verticalFilter, setVerticalFilter] = useState('all');
   const [verticals, setVerticals] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [bulkReviewStatus, setBulkReviewStatus] = useState('');
+  const [bulkNotes, setBulkNotes] = useState('');
 
   useEffect(() => {
     fetchCandidates();
@@ -157,6 +175,71 @@ export function CandidateTable() {
     return <Badge variant={variants[status] || 'outline'}>{status}</Badge>;
   };
 
+  const toggleSelectAll = () => {
+    if (selectedCandidates.size === filteredCandidates.length) {
+      setSelectedCandidates(new Set());
+    } else {
+      setSelectedCandidates(new Set(filteredCandidates.map(c => c.assessment_id)));
+    }
+  };
+
+  const toggleSelectCandidate = (assessmentId: string) => {
+    const newSelected = new Set(selectedCandidates);
+    if (newSelected.has(assessmentId)) {
+      newSelected.delete(assessmentId);
+    } else {
+      newSelected.add(assessmentId);
+    }
+    setSelectedCandidates(newSelected);
+  };
+
+  const handleBulkAction = async () => {
+    if (selectedCandidates.size === 0) {
+      toast({
+        title: 'No candidates selected',
+        description: 'Please select at least one candidate',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const updates: any = {};
+      if (bulkReviewStatus) updates.review_status = bulkReviewStatus;
+      if (bulkNotes) updates.admin_notes = bulkNotes;
+      updates.reviewed_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('assessments')
+        .update(updates)
+        .in('id', Array.from(selectedCandidates));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Bulk action completed',
+        description: `Updated ${selectedCandidates.size} candidate(s)`,
+      });
+
+      setShowBulkDialog(false);
+      setBulkReviewStatus('');
+      setBulkNotes('');
+      setSelectedCandidates(new Set());
+      fetchCandidates();
+    } catch (error) {
+      console.error('Error performing bulk action:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update candidates',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedCandidates(new Set());
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -167,6 +250,76 @@ export function CandidateTable() {
 
   return (
     <div className="space-y-4">
+      {/* Bulk Actions Bar */}
+      {selectedCandidates.size > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Badge variant="default" className="text-base px-4 py-2">
+                  {selectedCandidates.size} Selected
+                </Badge>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear Selection
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Bulk Update
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bulk Update Candidates</DialogTitle>
+                      <DialogDescription>
+                        Update {selectedCandidates.size} selected candidate(s)
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Review Status</label>
+                        <Select value={bulkReviewStatus} onValueChange={setBulkReviewStatus}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Change status..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="reviewing">Reviewing</SelectItem>
+                            <SelectItem value="interviewed">Interviewed</SelectItem>
+                            <SelectItem value="accepted">Accepted</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Admin Notes</label>
+                        <Textarea
+                          placeholder="Add notes to all selected candidates..."
+                          value={bulkNotes}
+                          onChange={(e) => setBulkNotes(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowBulkDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleBulkAction}>
+                        Update {selectedCandidates.size} Candidate(s)
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <div className="flex gap-4 items-center flex-wrap">
         <div className="flex-1 min-w-[200px]">
