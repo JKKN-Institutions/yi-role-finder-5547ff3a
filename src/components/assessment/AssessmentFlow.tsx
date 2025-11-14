@@ -72,7 +72,7 @@ export const AssessmentFlow = () => {
     setIsSubmitting(true);
     try {
       await submitAssessment();
-      navigate('/results');
+      navigate('/thank-you');
     } catch (error) {
       console.error('Error submitting assessment:', error);
       toast.error("Failed to submit assessment");

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
+import ThankYou from "./pages/ThankYou";
 import Login from "./pages/Login";
 import Setup from "./pages/Setup";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -26,6 +27,7 @@ const App = () => (
           <AssessmentProvider>
             <Routes>
               <Route path="/" element={<Assessment />} />
+              <Route path="/thank-you" element={<ThankYou />} />
               <Route path="/results" element={<Results />} />
               <Route path="/login" element={<Login />} />
               <Route path="/setup" element={<Setup />} />
