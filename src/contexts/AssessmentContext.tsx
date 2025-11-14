@@ -35,16 +35,17 @@ export const AssessmentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         throw new Error('Full name is required');
       }
       
-      // Get current user session
+      // Generate session ID for anonymous tracking
+      const sessionId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Get current user session (optional - may be null for anonymous users)
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('You must be logged in to start an assessment');
-      }
       
       const { data, error } = await supabase
         .from('assessments')
         .insert({ 
-          user_id: session.user.id,  // CRITICAL: Set user_id for RLS
+          user_id: session?.user?.id || null,  // Optional: null for anonymous users
+          session_id: sessionId,
           user_email: email.trim(), 
           user_name: fullName.trim() 
         })
