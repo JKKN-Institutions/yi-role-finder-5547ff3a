@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { LogOut, BarChart3, Users, FileText } from 'lucide-react';
+import { LogOut, BarChart3, Users, FileText, TrendingUp } from 'lucide-react';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { CandidateTable } from '@/components/admin/CandidateTable';
 import { AnalyticsView } from '@/components/admin/AnalyticsView';
+import { ValidationMetrics } from '@/components/admin/ValidationMetrics';
 
 export default function AdminDashboard() {
   const { signOut, user } = useAuth();
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Overview
@@ -57,6 +58,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="analytics">
               <FileText className="w-4 h-4 mr-2" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="validation">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Validation
             </TabsTrigger>
           </TabsList>
 
@@ -70,6 +75,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="analytics" className="space-y-6">
             <AnalyticsView />
+          </TabsContent>
+
+          <TabsContent value="validation" className="space-y-6">
+            <ValidationMetrics />
           </TabsContent>
         </Tabs>
       </main>
