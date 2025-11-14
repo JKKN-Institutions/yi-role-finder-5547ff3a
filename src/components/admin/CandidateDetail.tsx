@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Star, Mail, Calendar, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackForm } from './FeedbackForm';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function CandidateDetail() {
   const { assessmentId } = useParams();
@@ -275,6 +277,62 @@ export function CandidateDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Hire Tracking Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Hire Tracking</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Actual Role Assigned</Label>
+                  <Input 
+                    placeholder="e.g., Vertical Chair, Co-Chair"
+                    id="actual-role"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Actual Vertical</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select vertical" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(verticalNames).map(([id, name]) => (
+                        <SelectItem key={id} value={id}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Hire Date</Label>
+                  <Input type="date" id="hire-date" />
+                </div>
+                <div className="space-y-2">
+                  <Label>AI Accuracy Assessment</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How accurate was AI?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="accurate">Accurate - Perfect match</SelectItem>
+                      <SelectItem value="partial">Partial - Close but not exact</SelectItem>
+                      <SelectItem value="inaccurate">Inaccurate - Wrong recommendation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Performance Notes</Label>
+                  <Textarea 
+                    placeholder="Track ongoing performance..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <Button className="w-full" variant="outline">
+                  Save Hire Tracking Data
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Center Panel - AI Analysis & Responses */}
@@ -316,16 +374,36 @@ export function CandidateDetail() {
                 <CardTitle>Assessment Responses</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {responses.map((response, index) => (
-                  <div key={response.id} className="border-b pb-4 last:border-0">
-                    <h4 className="font-semibold mb-2">
-                      Q{response.question_number}: {response.question_text}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {JSON.stringify(response.response_data, null, 2)}
-                    </p>
-                  </div>
-                ))}
+                {responses.map((response) => {
+                  // Resolve vertical names in Q1 responses
+                  let displayResponse = response.response_data;
+                  if (response.question_number === 1 && response.response_data) {
+                    const resolved = {
+                      priority1: verticalNames[response.response_data.priority1] || response.response_data.priority1,
+                      priority2: verticalNames[response.response_data.priority2] || response.response_data.priority2,
+                      priority3: verticalNames[response.response_data.priority3] || response.response_data.priority3,
+                    };
+                    displayResponse = resolved;
+                  }
+
+                  return (
+                    <div key={response.id} className="border-b pb-4 last:border-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold">
+                          Q{response.question_number}: {response.question_text}
+                        </h4>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(response.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="bg-muted/50 p-3 rounded">
+                        <pre className="text-sm whitespace-pre-wrap font-sans">
+                          {JSON.stringify(displayResponse, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
 

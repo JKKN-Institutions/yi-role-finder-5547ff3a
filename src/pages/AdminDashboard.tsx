@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { LogOut, BarChart3, Users, FileText, TrendingUp } from 'lucide-react';
+import { LogOut, BarChart3, Users, FileText, TrendingUp, Target } from 'lucide-react';
 import { DashboardOverview } from '@/components/admin/DashboardOverview';
 import { CandidateTable } from '@/components/admin/CandidateTable';
 import { AnalyticsView } from '@/components/admin/AnalyticsView';
 import { ValidationMetrics } from '@/components/admin/ValidationMetrics';
 import { VerticalsManagement } from '@/components/admin/VerticalsManagement';
 import { UserRoleManagement } from '@/components/admin/UserRoleManagement';
+import { HireTracking } from '@/components/admin/HireTracking';
 
 export default function AdminDashboard() {
   const { signOut, user } = useAuth();
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7">
             <TabsTrigger value="overview">
               <BarChart3 className="w-4 h-4 mr-2" />
               Overview
@@ -64,6 +65,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="validation">
               <TrendingUp className="w-4 h-4 mr-2" />
               Validation
+            </TabsTrigger>
+            <TabsTrigger value="tracking">
+              <Target className="w-4 h-4 mr-2" />
+              Hire Tracking
             </TabsTrigger>
             <TabsTrigger value="verticals">
               <FileText className="w-4 h-4 mr-2" />
@@ -89,6 +94,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="validation" className="space-y-6">
             <ValidationMetrics />
+          </TabsContent>
+
+          <TabsContent value="tracking" className="space-y-6">
+            <HireTracking />
           </TabsContent>
 
           <TabsContent value="verticals" className="space-y-6">
