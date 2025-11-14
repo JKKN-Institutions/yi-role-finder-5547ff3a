@@ -79,9 +79,6 @@ export const Question5 = ({ onAnswer, onSubmit, initialValue }: Question5Props) 
                 <div className="flex-1 space-y-1">
                   <p className="font-medium">{style.label}</p>
                   <p className="text-sm text-muted-foreground">{style.description}</p>
-                  <p className="text-xs text-accent font-semibold">
-                    → {style.recommendation}
-                  </p>
                 </div>
               </div>
             </Label>

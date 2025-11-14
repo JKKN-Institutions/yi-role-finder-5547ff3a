@@ -408,9 +408,15 @@ serve(async (req) => {
     console.log('Determining quadrant...');
     const quadrant = determineQuadrant(willPercent, skillPercent);
 
-    // Extract verticals and leadership style
+    // Extract verticals with priority structure
     const q1 = responses.find(r => r.question_number === 1);
-    const verticals = q1?.response_data || [];
+    const verticalData = q1?.response_data || {};
+    const verticals = [
+      verticalData.priority1,
+      verticalData.priority2,
+      verticalData.priority3
+    ].filter(Boolean); // Remove undefined values
+    
     const q5 = responses.find(r => r.question_number === 5);
     const leadershipStyle = q5?.response_data?.leadership_style || 'unknown';
 
@@ -442,6 +448,21 @@ serve(async (req) => {
         leadership_style: leadershipStyle,
         recommendations: recommendations,
         reasoning: reasoning,
+        scoring_breakdown: {
+          will: {
+            total: willResult.total,
+            max: 90,
+            percent: willPercent,
+            breakdown: willResult.breakdown
+          },
+          skill: {
+            total: skillAnalysis.total,
+            max: 100,
+            percent: skillPercent,
+            breakdown: skillAnalysis.breakdown,
+            rationale: skillAnalysis.rationale
+          }
+        },
         key_insights: {
           commitment_level: willPercent >= 70 ? 'high' : willPercent >= 50 ? 'medium' : 'low',
           skill_readiness: skillPercent >= 70 ? 'high' : skillPercent >= 50 ? 'medium' : 'low',
